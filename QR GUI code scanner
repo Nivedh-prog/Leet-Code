@@ -1,0 +1,84 @@
+from tkinter import *
+from tkinter import ttk
+import tkinter as tk
+import sys
+import cv2 as cv
+from PIL import Image
+import numpy as np
+import mysql.connector
+import datetime
+
+global data
+
+root = Tk()
+
+root.geometry("500x418")
+root.title('QR Scanner')
+
+root.configure(bg='#856ff8')
+label_0 =Label(root,text="PY Scanner", width=19,font=("bold",23),fg='dark slate gray',bg="medium slate blue")
+label_0.place(x=90,y=65)
+
+def btn1():
+	cam = cv.VideoCapture(0)
+	result, image = cam.read()
+	detect=cv.QRCodeDetector()
+	if result:
+	    kernel = np.array([[0, -1, 0],
+	                   [-1, 5,-1],
+	                   [0, -1, 0]])
+	    image_sharp = cv.filter2D(src=image, ddepth=-1, kernel=kernel)
+
+	    cv.imwrite("Qld.png", image)
+	    cv.imwrite("new.png", image_sharp)
+
+	    cv.imshow("new.png",image)
+	    cv.waitKey(2400)
+	    cv.destroyAllWindows()
+
+	data,bbox,sqrcode=detect.detectAndDecode(image)
+	if bbox is not None:
+	    print(data)
+	else:
+	    data = "NULL"
+	    print("img not visible")
+	    
+	now = datetime.datetime.now()
+	l = now.time()
+	m = now.date()
+
+	cnx = mysql.connector.connect(user='root',password='toor',
+                                database='qr')
+	cursor = cnx.cursor()
+	print(cursor)
+
+	sql = "INSERT INTO student (id, Data, Date,Time) VALUES (%s, %s,%s,%s)"
+	val = (0,data,l,m)
+	cursor.execute(sql, val)
+	cnx.commit()
+
+	print(cursor.rowcount, "record inserted.")
+	cursor.close()
+
+def btn2():
+	sys,exit()
+def btn3():
+	print("Data Inserted")
+
+
+label_6=Label(root,text="Code Type  :-",bg='#856ff8',fg='white',width=20,font=('bold',13))
+label_6.place(x=75,y=170)
+
+var1=IntVar()
+lod = Checkbutton(root,text="QR",font=('bold',10),bg='#856ff8', variable=var1).place(x=230,y=170)
+var2=IntVar()
+mod = Checkbutton(root,text="Bar",font=('bold',10),bg='#856ff8', variable=var2).place(x=290,y=170)
+
+
+#this creates button for submitting the details provides by the user
+Button(root, text='Scan' , width=20,bg="coral1",fg='white',command=btn1).place(x=180,y=250)
+Button(root, text='Retake Scan' , width=20,bg="light sea green",fg='white',command=btn1).place(x=180,y=285)
+Button(root, text='Insert into DATABASE' , width=20,bg="coral1",fg='white',command=btn3).place(x=180,y=320)
+Button(root, text='Exit' , width=20,bg="light sea green",fg='white',command=btn2).place(x=180,y=355)
+#this will run the mainloop.
+root.mainloop()
